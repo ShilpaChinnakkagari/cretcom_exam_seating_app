@@ -2,12 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/student.dart';
+import 'config_service.dart';
 
 class SheetsService {
-  // TODO: Replace with your actual values
-  final String _spreadsheetId = '1tPZ8Wim8Kony5JthYf9aVhxvDRLshP5Kv1-cdA_TiuE';
-  final String _sheetName = 'Sheet1';
-  final String _apiKey = 'AIzaSyBQS02d-enQ6ugCCKUgjyzt_PHt8Zwq6wo';
+  final ConfigService _configService = ConfigService();
   
   Map<String, Student>? _cache;
   DateTime? _lastFetch;
@@ -18,14 +16,26 @@ class SheetsService {
   }
 
   Future<Map<String, Student>> _getData() async {
+    // Check cache
     if (_cache != null && _lastFetch != null) {
       if (DateTime.now().difference(_lastFetch!).inMinutes < 30) {
         return _cache!;
       }
     }
 
+    // Get config
+    final spreadsheetId = _configService.spreadsheetId;
+    final apiKey = _configService.apiKey;
+    
+    if (spreadsheetId == null || apiKey == null) {
+      print('❌ No config available');
+      return {};
+    }
+
     try {
-      final url = 'https://sheets.googleapis.com/v4/spreadsheets/$_spreadsheetId/values/$_sheetName?key=$_apiKey';
+      final url = 'https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/Sheet1?key=$apiKey';
+      print('📡 Fetching from: $url');
+      
       final response = await http.get(Uri.parse(url));
       
       if (response.statusCode == 200) {
@@ -49,13 +59,16 @@ class SheetsService {
           }
         }
 
+        print('✅ Fetched ${result.length} students');
         _cache = result;
         _lastFetch = DateTime.now();
         await _saveToDisk(result);
         return result;
+      } else {
+        print('❌ API error: ${response.statusCode}');
       }
     } catch (e) {
-      print('Network error: $e');
+      print('❌ Network error: $e');
     }
 
     return await _loadFromDisk();

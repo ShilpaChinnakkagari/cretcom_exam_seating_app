@@ -23,6 +23,19 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Consumer<AppState>(
         builder: (context, state, child) {
+          if (state.configLoading) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
+                  Text('Loading configuration...'),
+                ],
+              ),
+            );
+          }
+
           return Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
