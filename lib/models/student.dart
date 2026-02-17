@@ -1,3 +1,4 @@
+// This is ONLY for Student App - reads from Firebase
 class Student {
   final String id;
   final String name;
